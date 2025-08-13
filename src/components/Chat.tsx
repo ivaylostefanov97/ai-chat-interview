@@ -6,20 +6,30 @@ import type { ChatMessage } from "@/lib/types";
 const STORAGE_KEY = "ai-chat:messages:v1";
 
 export default function Chat() {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as ChatMessage[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
+  const didInitFromStorage = useRef(false);
+
+  // Load from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        setMessages(JSON.parse(raw) as ChatMessage[]);
+      }
+    } catch {
+      // ignore load errors
+    } finally {
+      didInitFromStorage.current = true;
+    }
+  }, []);
+
+  // Persist to localStorage after initial load
+  useEffect(() => {
+    if (!didInitFromStorage.current) return;
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     } catch {
