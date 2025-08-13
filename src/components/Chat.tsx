@@ -9,7 +9,6 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
-  const abortRef = useRef<AbortController | null>(null);
 
   const didInitFromStorage = useRef(false);
 
@@ -46,40 +45,17 @@ export default function Chat() {
     setInput("");
     setIsStreaming(true);
 
-    const controller = new AbortController();
-    abortRef.current = controller;
+    // TODO(CANDIDATE): Implement fetch with streaming and incremental updates.
+    // See README sections:
+    // - Client-side streaming guide (TextDecoder)
+    // - Aborting a stream (AbortController with fetch)
 
-    try {
-      const resp = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: [...messages, userMessage] }),
-        signal: controller.signal,
-      });
-      if (!resp.ok || !resp.body) {
-        // Leave placeholder message; candidates implement streaming read below
-        throw new Error("Failed to start stream");
-      }
-      // TODO(CANDIDATE): Implement streaming read with TextDecoder and incremental UI updates.
-      // Example (see README for full snippet):
-      // const reader = resp.body.getReader();
-      // const decoder = new TextDecoder();
-      // for (;;) {
-      //   const { value, done } = await reader.read();
-      //   if (done) break;
-      //   const chunk = decoder.decode(value, { stream: true });
-      //   setMessages((prev) => {/* append chunk to last assistant message */});
-      // }
-    } catch (err) {
-      // Optionally surface error to UI
-    } finally {
-      setIsStreaming(false);
-      abortRef.current = null;
-    }
+    // For now, immediately end the simulated streaming session.
+    setIsStreaming(false);
   }, [canSend, input, messages]);
 
   const onStop = useCallback(() => {
-    abortRef.current?.abort();
+    // TODO(CANDIDATE): Abort in-flight fetch using AbortController
   }, []);
 
   const onClear = useCallback(() => {

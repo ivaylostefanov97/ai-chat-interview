@@ -75,13 +75,13 @@ If no `OPENAI_API_KEY` is set, you can fall back to a mock stream (already inclu
 In `src/components/Chat.tsx`, use `ReadableStreamDefaultReader` and `TextDecoder` to read and append chunks to the last assistant message:
 
 ```ts
-const reader = resp.body.getReader();
+const reader = resp.body!.getReader();
 const decoder = new TextDecoder();
-
+let assistantText = "";
 for (;;) {
   const { value, done } = await reader.read();
   if (done) break;
-  const text = decoder.decode(value, { stream: true });
+  assistantText += decoder.decode(value, { stream: true });
 }
 ```
 
@@ -89,3 +89,23 @@ for (;;) {
 
 - While streaming, update React state on each token. Persist periodically or after stream ends.
 - Ensure state remains consistent if the user presses Stop/Abort mid-stream.
+
+### Aborting a streaming fetch
+
+Use `AbortController` to allow stopping an in-flight request. Wire the `controller.signal` into `fetch`, keep the controller in a ref, and call `abort()` on Stop.
+
+```ts
+// create controller and remember it
+const controller = new AbortController();
+abortRef.current = controller;
+
+const resp = await fetch("...", {
+  ...
+  signal: controller.signal,
+});
+
+// later, on Stop button click
+abortRef.current?.abort();
+```
+
+Make sure to set `isStreaming` to false in a `finally` block after your streaming loop completes or aborts.
