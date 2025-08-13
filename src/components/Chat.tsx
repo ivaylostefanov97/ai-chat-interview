@@ -26,16 +26,6 @@ export default function Chat() {
     }
   }, []);
 
-  // Persist to localStorage after initial load
-  useEffect(() => {
-    if (!didInitFromStorage.current) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-    } catch {
-      // ignore persistence errors
-    }
-  }, [messages]);
-
   const canSend = useMemo(() => input.trim().length > 0 && !isStreaming, [input, isStreaming]);
 
   const onSubmit = useCallback(async () => {
@@ -59,10 +49,7 @@ export default function Chat() {
   }, []);
 
   const onClear = useCallback(() => {
-    setMessages([]);
-    try {
-      window.localStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    // TODO(CANDIDATE): Clear messages and reset UI
   }, []);
 
   return (

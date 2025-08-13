@@ -77,11 +77,10 @@ In `src/components/Chat.tsx`, use `ReadableStreamDefaultReader` and `TextDecoder
 ```ts
 const reader = resp.body!.getReader();
 const decoder = new TextDecoder();
-let assistantText = "";
 for (;;) {
   const { value, done } = await reader.read();
   if (done) break;
-  assistantText += decoder.decode(value, { stream: true });
+  const text = decoder.decode(value, { stream: true });
 }
 ```
 
