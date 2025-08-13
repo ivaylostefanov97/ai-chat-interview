@@ -3,6 +3,7 @@ export const runtime = "edge";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import type { ChatMessage } from "@/lib/types";
+import OpenAI from "openai";
 
 // NOTE FOR CANDIDATES:
 // - Replace the mock streaming with a real OpenAI streaming implementation.
@@ -48,25 +49,14 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // TODO(CANDIDATE): Implement real OpenAI streaming.
-  // Suggested approach (pseudocode):
-  // import OpenAI from "openai";
-  // const client = new OpenAI({ apiKey: apiKey });
-  // const response = await client.chat.completions.create({
-  //   model: "gpt-4o-mini",
-  //   messages: history,
-  //   stream: true,
-  // });
-  // return new Response(response.toReadableStream(), { headers: { "Content-Type": "text/plain" } });
+  // TODO(CANDIDATE): Implement real OpenAI streaming below and return text/plain token stream.
+  // Pseudocode reference (see README for an example):
 
-  // Temporary: simple non-streaming fallback using mock but prefixed to indicate key exists.
-  const stream = createMockStream(
-    `[openai-key-present] Implement streaming with the SDK here. User asked: "${userLast}"`,
-    25,
-  );
-  return new Response(stream, {
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
-  });
+  // Keep OpenAI client available for candidates.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const client = new OpenAI({ apiKey });
+
+  return NextResponse.json({ error: "Streaming not implemented. Complete in src/app/api/chat/route.ts (see README)." }, { status: 501 });
 }
 
 

@@ -57,24 +57,19 @@ export default function Chat() {
         signal: controller.signal,
       });
       if (!resp.ok || !resp.body) {
+        // Leave placeholder message; candidates implement streaming read below
         throw new Error("Failed to start stream");
       }
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let assistantText = "";
-      // TODO(CANDIDATE): Replace with robust stream handling & partial rendering
-      // This simple loop appends streamed text
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        assistantText += decoder.decode(value, { stream: true });
-        setMessages((prev) => {
-          const next = [...prev];
-          const idx = next.findLastIndex((m) => m.role === "assistant");
-          if (idx !== -1) next[idx] = { role: "assistant", content: assistantText };
-          return next;
-        });
-      }
+      // TODO(CANDIDATE): Implement streaming read with TextDecoder and incremental UI updates.
+      // Example (see README for full snippet):
+      // const reader = resp.body.getReader();
+      // const decoder = new TextDecoder();
+      // for (;;) {
+      //   const { value, done } = await reader.read();
+      //   if (done) break;
+      //   const chunk = decoder.decode(value, { stream: true });
+      //   setMessages((prev) => {/* append chunk to last assistant message */});
+      // }
     } catch (err) {
       // Optionally surface error to UI
     } finally {

@@ -10,18 +10,16 @@ This project is a Next.js scaffold for an interview exercise: implement a stream
 
 ### Your task
 
-1. Replace the mock streaming in `src/app/api/chat/route.ts` with real OpenAI streaming using the SDK.
-2. Improve the client UI/UX and state management in `src/components/Chat.tsx`:
-   - Robust stream handling (partial rendering, abort, error states)
-   - Better styling and message avatars, timestamps (optional)
-3. Keep persistence in localStorage.
+1. Implement server-side streaming in `src/app/api/chat/route.ts` using the OpenAI SDK and return a text/plain stream of tokens.
+2. Implement client-side streaming consumption in `src/components/Chat.tsx` with `TextDecoder`, updating UI incrementally.
+3. Keep persistence in localStorage and decide how to synchronize state during streaming.
 
 ### Setup
 
 1. Install dependencies:
 
 ```bash
-pnpm i
+yarn
 # or: npm i / yarn
 ```
 
@@ -45,3 +43,49 @@ pnpm dev
 - The API route is configured for `runtime = "edge"`.
 - You may choose models such as `gpt-4o-mini` or similar.
 - Keep the API response as a text stream (`text/plain`) for simplicity.
+
+### Server-side streaming guide (example)
+
+Below is a minimal pattern to stream tokens as plain text from the server. Integrate this in `src/app/api/chat/route.ts`.
+
+```ts
+const encoder = new TextEncoder();
+const readable = new ReadableStream<Uint8Array>({
+  async start(controller) {
+    try {
+      for await (const part of completion) {
+        const token = part.choices?.[0]?.delta?.content ?? "";
+        if (token) controller.enqueue(encoder.encode(token));
+      }
+    } finally {
+      controller.close();
+    }
+  },
+});
+
+return new Response(readable, {
+  headers: { "Content-Type": "text/plain; charset=utf-8" },
+});
+```
+
+If no `OPENAI_API_KEY` is set, you can fall back to a mock stream (already included) to simulate tokens.
+
+### Client-side streaming guide (example)
+
+In `src/components/Chat.tsx`, use `ReadableStreamDefaultReader` and `TextDecoder` to read and append chunks to the last assistant message:
+
+```ts
+const reader = resp.body.getReader();
+const decoder = new TextDecoder();
+
+for (;;) {
+  const { value, done } = await reader.read();
+  if (done) break;
+  const text = decoder.decode(value, { stream: true });
+}
+```
+
+### Local state vs. persisted state
+
+- While streaming, update React state on each token. Persist periodically or after stream ends.
+- Ensure state remains consistent if the user presses Stop/Abort mid-stream.
