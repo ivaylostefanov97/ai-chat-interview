@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This project is a Next.js scaffold for an interview exercise: implement a streaming AI chat using the OpenAI SDK, with client-side persistence via localStorage.
 
-## Getting Started
+### What’s provided
 
-First, run the development server:
+- Basic UI in `src/components/Chat.tsx` that:
+  - Persists messages to localStorage
+  - Calls an API endpoint and renders streamed text chunks into the assistant message
+- API route at `src/app/api/chat/route.ts` with an edge runtime and a mock stream
+- Types in `src/lib/types.ts`
+
+### Your task
+
+1. Replace the mock streaming in `src/app/api/chat/route.ts` with real OpenAI streaming using the SDK.
+2. Improve the client UI/UX and state management in `src/components/Chat.tsx`:
+   - Robust stream handling (partial rendering, abort, error states)
+   - Better styling and message avatars, timestamps (optional)
+3. Keep persistence in localStorage.
+
+### Setup
+
+1. Install dependencies:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm i
+# or: npm i / yarn
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Create an `.env.local` file with your key:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+echo "OPENAI_API_KEY=" >> .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set `OPENAI_API_KEY=...`.
 
-## Learn More
+3. Run the dev server:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+pnpm dev
+# or npm run dev / yarn dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Notes
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- The API route is configured for `runtime = "edge"`.
+- You may choose models such as `gpt-4o-mini` or similar.
+- Keep the API response as a text stream (`text/plain`) for simplicity.
