@@ -1,56 +1,94 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
+import { v4 as uuidv4 } from "uuid";
 
-const STORAGE_KEY = "ai-chat:messages:v1";
+function AIMessage({
+  message,
+  reloadMessage,
+}: {
+  message: ChatMessage;
+  reloadMessage: (id: ChatMessage["id"]) => void;
+}) {
+  return (
+    <div className="text-left">
+      <span className="inline-block rounded-lg px-3 py-2 text-sm bg-gray-200 dark:bg-gray-800">
+        {message.content}
+      </span>
+      <br />
+      {message.status === "success" && (
+        <button
+          className="text-xs opacity-60 mt-2 hover:opacity-100 hover:cursor-pointer"
+          onClick={() => reloadMessage(message.id)}
+        >
+          reload
+        </button>
+      )}
+    </div>
+  );
+}
+
+function UserMessage({ message }: { message: ChatMessage }) {
+  return (
+    <div className="text-right">
+      <span className="inline-block rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800">
+        {message.content}
+      </span>
+    </div>
+  );
+}
 
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const didInitFromStorage = useRef(false);
-
-  // Load from localStorage after mount to avoid SSR/client mismatch
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        setMessages(JSON.parse(raw) as ChatMessage[]);
-      }
+      loadMessages();
     } catch {
-      // ignore load errors
-    } finally {
-      didInitFromStorage.current = true;
+      console.error("Failed to load messages");
     }
   }, []);
 
-  const canSend = useMemo(() => input.trim().length > 0 && !isStreaming, [input, isStreaming]);
+  const loadMessages = async () => {
+    const resp = await fetch("/api/chat");
 
-  const onSubmit = useCallback(async () => {
+    if (!resp.ok) {
+      throw new Error("Failed to load messages");
+    }
+
+    const data = await resp.json();
+    setMessages(data as ChatMessage[]);
+  };
+
+  const canSend = useMemo(
+    () => input.trim().length > 0 && !isStreaming,
+    [input, isStreaming]
+  );
+
+  const onSubmit = () => {
     if (!canSend) return;
-    const userMessage: ChatMessage = { role: "user", content: input.trim() };
-    setMessages((prev) => [...prev, userMessage, { role: "assistant", content: "" }]);
-    setInput("");
+
     setIsStreaming(true);
 
-    // TODO(CANDIDATE): Implement fetch with streaming and incremental updates.
-    // See README sections:
-    // - Client-side streaming guide (TextDecoder)
-    // - Aborting a stream (AbortController with fetch)
+    const userMessage: ChatMessage = {
+      id: uuidv4(),
+      role: "user",
+      content: input.trim(),
+      status: "success",
+    };
 
-    // For now, immediately end the simulated streaming session.
     setIsStreaming(false);
-  }, [canSend, input, messages]);
+  };
 
-  const onStop = useCallback(() => {
-    // TODO(CANDIDATE): Abort in-flight fetch using AbortController
-  }, []);
+  const onStop = () => {};
 
-  const onClear = useCallback(() => {
-    // TODO(CANDIDATE): Clear messages and reset UI
-  }, []);
+  const onClear = () => {};
+
+  const reloadMessage = () => {};
 
   return (
     <div className="w-full max-w-2xl mx-auto flex flex-col gap-4">
@@ -60,10 +98,15 @@ export default function Chat() {
         ) : (
           <div className="flex flex-col gap-3">
             {messages.map((m, i) => (
-              <div key={i} className={m.role === "user" ? "text-right" : "text-left"}>
-                <span className="inline-block rounded-lg px-3 py-2 text-sm bg-gray-100 dark:bg-gray-800">
-                  {m.content}
-                </span>
+              <div
+                key={i}
+                className={m.role === "user" ? "text-right" : "text-left"}
+              >
+                {m.role === "assistant" ? (
+                  <AIMessage message={m} reloadMessage={reloadMessage} />
+                ) : (
+                  <UserMessage message={m} />
+                )}
               </div>
             ))}
           </div>
@@ -105,9 +148,9 @@ export default function Chat() {
           Clear
         </button>
       </form>
-      <p className="text-xs opacity-60">Messages persist to localStorage only.</p>
+      <p className="text-xs opacity-60">
+        Messages persist to localStorage only.
+      </p>
     </div>
   );
 }
-
-

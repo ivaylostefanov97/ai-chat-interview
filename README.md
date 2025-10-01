@@ -3,24 +3,15 @@ This project is a Next.js scaffold for an interview exercise: implement a stream
 ### What’s provided
 
 - Basic UI in `src/components/Chat.tsx` that:
-  - Persists messages to localStorage
-  - Calls an API endpoint and renders streamed text chunks into the assistant message
-- API route at `src/app/api/chat/route.ts` with an edge runtime and a mock stream
+- API route at `src/app/api/chat/route.ts` with an edge runtime and an llm stream
 - Types in `src/lib/types.ts`
-
-### Your task
-
-1. Implement server-side streaming in `src/app/api/chat/route.ts` using the OpenAI SDK and return a text/plain stream of tokens.
-2. Implement client-side streaming consumption in `src/components/Chat.tsx` with `TextDecoder`, updating UI incrementally.
-3. Keep persistence in localStorage and decide how to synchronize state during streaming.
 
 ### Setup
 
 1. Install dependencies:
 
 ```bash
-yarn
-# or: npm i / yarn
+npm i / yarn
 ```
 
 2. Create an `.env.local` file with your key:
@@ -34,15 +25,13 @@ Set `OPENAI_API_KEY=...`.
 3. Run the dev server:
 
 ```bash
-pnpm dev
+npm run dev
 # or npm run dev / yarn dev
 ```
 
 ### Notes
 
-- The API route is configured for `runtime = "edge"`.
 - You may choose models such as `gpt-4o-mini` or similar.
-- Keep the API response as a text stream (`text/plain`) for simplicity.
 
 ### Server-side streaming guide (example)
 
@@ -68,20 +57,13 @@ return new Response(readable, {
 });
 ```
 
-If no `OPENAI_API_KEY` is set, you can fall back to a mock stream (already included) to simulate tokens.
-
 ### Client-side streaming guide (example)
 
-In `src/components/Chat.tsx`, use `ReadableStreamDefaultReader` and `TextDecoder` to read and append chunks to the last assistant message:
+In `src/components/Chat.tsx`, use `TextDecoder` to read and append chunks:
 
 ```ts
 const reader = resp.body!.getReader();
 const decoder = new TextDecoder();
-for (;;) {
-  const { value, done } = await reader.read();
-  if (done) break;
-  const text = decoder.decode(value, { stream: true });
-}
 ```
 
 ### Local state vs. persisted state
